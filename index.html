@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shift CSS · As in "shift the weight" because writing CSS takes time. A slim CSS framework for web apps.</title>
+
+    <meta charset="utf-8">
+    <meta name="description" content="As in 'shift the weight' because writing CSS takes time. A slim CSS framework for web apps.">
+    <meta name="author" content="Jordan Ranson">
+
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="http://fonts.googleapis.com/css?family=Ubuntu+Mono" rel="stylesheet" type="text/css">
+    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,900" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="shift.css">
+    <link rel="stylesheet" type="text/css" href="site.css">
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+</head>
+<body>
+    <!-- spell list -->
+
+<textarea id="convert">A i d
+2 nd-level abjuration
+Casting Time: 1 action
+Range: 30 feet
+Components: V, S, M (a tiny strip o f white cloth)
+Duration: 8 hours
+Your spell bolsters your allies with toughness and
+resolve. C hoose up to three creatures within range.
+Each target’s hit point maximum and current hit points
+increase by 5 for the duration.
+A t Higher Levels. W hen you cast this spell using
+a spell slot of 3rd level or higher, a target’s hit points
+increase by an additional 5 for each slot level above 2nd.
+
+A n t i p a t h y / S y m p a t h y
+8 th-level enchantment
+Casting Time: 1 hour
+Range: 60 feet
+Components: V, S, M (either a lump of alum soaked in
+vinegar for the antipathy effect or a drop of honey for
+the sympathy effect)
+Duration: 10 days
+This spell attracts or repels creatures of your choice.
+You target som ething within range, either a Huge or
+sm aller object or creature or an area that is no larger
+than a 200-foot cube. Then specify a kind of intelligent
+creature, such as red dragons, goblins, or vampires.
+You invest the target with an aura that either attracts or
+repels the specified creatures for the duration. Choose
+antipathy or sympathy as the aura’s effect.
+Antipathy. The enchantment causes creatures of the
+kind you designated to feel an intense urge to leave the
+area and avoid the target. W hen such a creature can
+see the target or com es within 60 feet of it, the creature
+must succeed on a W isdom saving throw or becom e
+frightened. The creature remains frightened while it can
+see the target or is within 60 feet of it. W hile frightened
+by the target, the creature must use its movement to
+perpendicular to it at the points you choose. A ring is
+visible only from one side (your choice), which is the side
+that functions as a portal.
+Any creature or object entering the portal exits from
+the other portal as if the two were adjacent to each
+other; passing through a portal from the nonportal side
+has no effect. The mist that fills each portal is opaque
+and blocks vision through it. On your turn, you can
+rotate the rings as a bonus action so that the active side
+faces in a different direction.
+
+B l i g h t
+4th-level necromancy
+Casting Time: 1 action
+Range: 30 feet
+Components: V, S
+Duration: Instantaneous
+Necrom antic energy w ashes over a creature of your
+choice that you can see within range, draining moisture
+and vitality from it. The target must make a Constitution
+saving throw. The target takes 8d8 necrotic damage on
+a failed save, or half as much damage on a successful
+one. This spell has no effect on undead or constructs.
+If you target a plant creature or a magical plant, it
+m akes the saving throw with disadvantage, and the spell
+deals maximum damage to it.
+If you target a nonm agical plant that isn’t a creature,
+such as a tree or shrub, it doesn’t make a saving throw;
+it simply withers and dies.
+At Higher Levels. W hen you cast this spell using a
+spell slot o f 5th level or higher, the damage increases by
+1d8 for each slot level above 4th.</textarea>
+
+    <script>
+        function parseName(str) {
+            str = str.replace('  ', '@@@');
+            str = str.replace(/\s/g, '');
+            str = str.replace('@@@', ' ');
+
+            return str;
+        }
+
+        function parseType(str) {
+            var regex = /([A-Z0-9]\s)+/g;
+            var match;
+            while ((match = regex.exec(str)) != null) {
+                str = str.replace(match[0], match[0].replace(' ', ''));
+            }
+
+            return str;
+        }
+
+        function parseComponents(str) {
+            var regex = /([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\s[a-zA-Z0-9]\s)+/g;
+            var match;
+            while ((match = regex.exec(str)) != null) {
+                str = str.replace(match[0], match[0].slice(0,match[0].length-1));
+            }
+
+            return str;
+        }
+
+        function parseText(str) {
+            var regex = /([A-Z]\s)+/g;
+            var match;
+            while ((match = regex.exec(str)) != null) {
+                str = str.replace(match[0], match[0].replace(' ', ''));
+            }
+            regex = /([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\s[a-zA-Z0-9]\s)+/g;
+            while ((match = regex.exec(str)) != null) {
+                str = str.replace(match[0], match[0].slice(0,match[0].length-1));
+            }
+            str = str.replace('’', "'");
+
+            return str;
+        }
+
+
+        // get raw data
+        var rawData   = $('#convert').val();
+        var lines     = rawData.split('\n');
+        var rawSpells = [];
+
+        // process raw data into lists of lines for each spell
+        var rawSpell = null;
+        for(var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            if (rawSpell === null) {
+                rawSpell = [];
+                rawSpells.push(rawSpell);
+            }
+            if(line === "") rawSpell = null;
+            else rawSpell.push(line);
+        }
+
+        // process raw spell data into spell objects
+        var spells = [];
+        for(var i = 0; i < rawSpells.length; i++) {
+            var spellData = rawSpells[i];
+            var spell     = {
+                description: []
+            };
+
+            var text = '';
+            for(var k = 0; k < spellData.length; k++) {
+                var line = spellData[k];
+
+                switch(k) {
+                    case 0: spell.name        = parseName(line); break;
+                    case 1: spell.types       = parseType(line).split(' '); break;
+                    case 2: spell.castingTime = line.replace('Casting Time: ', ''); break;
+                    case 3: spell.range       = line.replace('Range: ', ''); break;
+                    //case 4: spell.components  = parseComponents(line.replace('Components: ', '')); break;
+                    //case 5: spell.duration    = line.replace('Duration: ', ''); break;
+                }
+
+                if(paragraph === null) paragraph = { text: '', title: '' };
+                if(k > 5) {
+                    text += parseText(line) + ' ';
+
+                    /*var sentences = line.split('.');
+                    var nextParagraph = true;
+                    var sentence;
+                    for(var x = 0; x < sentences.length; x++) {
+                        sentence = parseText(sentences[x]);
+                        console.log(sentence);
+
+                        var words = sentence.split(' ');
+                        var wordRegex = /[a-z]/g;
+                        for (var j = 0; j < words.length; j++) {
+                            var word = words[j];
+                            if (wordRegex.exec(word.charAt(0))) {
+                                nextParagraph = false;
+                                break;
+                            }
+                        }
+
+                        if(nextParagraph) {
+                            paragraph.title = sentence;
+                        }
+                    }
+
+                    if (nextParagraph) {
+                        paragraph.text = parseText(line) + ' ';
+                        spell.description.push(paragraph);
+                        paragraph = null;
+                        break;
+                    }*/
+                }
+            }
+
+            var sentences = text.split('. ');
+                sentences.splice(sentences.length-1, sentences.length);
+
+            var paragraph    = null;
+            var lastSentence = '';
+            for(var y = 0; y < sentences.length; y++) {
+                paragraph         = paragraph === null ? { text: '', title: '' } : paragraph;
+                var nextParagraph = true;
+                var sentence      = sentences[y];
+                var words         = sentence.split(' ');
+                var wordRegex     = /[a-z]/g;
+
+                for (var j = 0; j < words.length; j++) {
+                    var word = words[j];
+                    if (wordRegex.exec(word.charAt(0)) !== null) {
+                        nextParagraph = false;
+                        break;
+                    }
+                }
+
+                if(!nextParagraph) paragraph.text += sentence + (y===sentences.length-1?'.':'. ');
+                if(nextParagraph || y === sentences.length-1) {
+                    paragraph.title = lastSentence;
+                    lastSentence = sentence;
+                    spell.description.push(JSON.parse(JSON.stringify(paragraph)));
+                    paragraph = null;
+                }
+            }
+
+            //console.log(text, sentences);
+
+            spells.push(spell);
+        }
+
+        console.log(spells);
+
+        /*var regex   = /abc/g;
+        var matches = regex.exec(rawData);
+        console.log(matches)*/
+    </script>
+</body>
+</html>
