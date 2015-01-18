@@ -669,15 +669,17 @@
                     level : $tar.closest('.spell').attr('data-level')
                 };
                 spellbook.push(spell);
-
-                $('.x-content-panel').hide();
-                $('.x-spellbook-panel').show();
-
-                $('.x-nav a').removeClass('active');
-                $('.x-spellbook-nav').addClass('active');
-
                 localStorage.setItem('spellbook_data', JSON.stringify(spellbook));
-                route('.x-spellbook-panel');
+
+                if(confirm('Spell learned! View Spell Book?')) {
+                    $('.x-content-panel').hide();
+                    $('.x-spellbook-panel').show();
+
+                    $('.x-nav a').removeClass('active');
+                    $('.x-spellbook-nav').addClass('active');
+
+                    route('.x-spellbook-panel');
+                }
             });
 
             $body.on('click', '.x-remove-spell', function(e) {
