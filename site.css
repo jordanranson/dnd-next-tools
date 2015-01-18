@@ -96,3 +96,7 @@
 .item-value:hover span:first-child {
     display: none;
 }
+
+th a {
+    color: #fff;
+}

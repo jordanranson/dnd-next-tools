@@ -36,10 +36,10 @@
 
                                     <ul class="list list-nav x-nav">
                                         <li class="list-nav-header"><h2>Tools</h2></li>
-                                        <li><a href="javascript:void(0)" data-for="x-inventory-panel">Inventory</a></li>
-                                        <li><a href="javascript:void(0)" data-for="x-spellbook-panel">Spell Book</a></li>
+                                        <li><a href="javascript:void(0)" class="x-inventory-nav" data-for="x-inventory-panel">Inventory</a></li>
+                                        <li><a href="javascript:void(0)" class="x-spellbook-nav" data-for="x-spellbook-panel">Spell Book</a></li>
                                         <li class="list-nav-header"><h2>Reference</h2></li>
-                                        <li><a href="javascript:void(0)"class="x-spell-nav" data-for="x-spell-panel" class="active">Spell List</a></li>
+                                        <li><a href="javascript:void(0)" class="x-spell-nav" data-for="x-spell-panel" class="active">Spell List</a></li>
                                     </ul>
 
                                 </div>
@@ -112,8 +112,8 @@
 
     <script id="spellTemplate" type="text/x-handlebars">
         {{#each spells}}
-            <div class="spell">
-                <h2>{{{name}}}</h2>
+            <div class="spell" data-name="{{name}}" data-level="{{level}}">
+                <h2>{{{name}}} &nbsp;<small><a href="javascript:void(0)" class="x-add-spell-list">Learn</a></small></h2>
                 <h3>Level {{{level}}}, {{{school}}}{{#if ritual}}, ritual{{/if}}</h3>
                 <p><strong>Casting Time</strong> {{{casting_time}}}</p>
                 <p><strong>Range</strong> {{{range}}}</p>
@@ -171,29 +171,37 @@
     <script id="spellbookTemplate" type="text/x-handlebars">
         <table class="table table-wide table-inventory">
             <colgroup>
-                <col width="45%">
+                <col width="50%">
+                <col width="15%">
                 <col width="35%">
-                <col width="20%">
             </colgroup>
             <thead>
             <tr>
-                <th>Name</th>
-                <th class="cell-center"></th>
+                <th><a href="javascript:void(0)" class="x-sort-spell-level">Name</a></th>
+                <th class="cell-center"><a href="javascript:void(0)" class="x-sort-spell-level">Level</a></th>
                 <th class="cell-center"></th>
             </tr>
             </thead>
             <tbody>
             <tr class="input-row x-input-row">
-                <td colspan="2">
+                <td>
                     <input type="text" class="text x-spell-name" placeholder="spell name">
                 </td>
-                <td class="cell-center"><button class="button x-add-spell">Add</button></td>
+                <td class="cell-center">
+                    <input type="text" class="text cell-center x-spell-level" placeholder="level">
+                </td>
+                <td class="cell-center">
+                    <button class="button x-add-spell">Learn</button>
+                </td>
             </tr>
             {{#each spells}}
             <tr class="x-item-row" data-id="{{id}}" data-name="{{name}}">
                 <td>{{name}}</td>
-                <td class="cell-center"><a href="javascript:void(0)" class="x-view-spell">View in Spell List</a></td>
-                <td class="cell-center"><a href="javascript:void(0)" class="x-remove-spell error">Remove</a></td>
+                <td class="cell-center">{{level}}</td>
+                <td class="cell-center">
+                    <a href="javascript:void(0)" class="x-view-spell">View in Spell List</a>&nbsp;&nbsp;
+                    <a href="javascript:void(0)" class="x-remove-spell error">Remove</a>
+                </td>
             </tr>
             {{/each}}
             </tbody>
@@ -330,10 +338,14 @@
             }
         }
 
-        function loadSpellbookPanel() {
+        function loadSpellbookPanel(sortBy) {
             var $xSpellbook    = $('.x-spellbook');
             var spellbookData  = JSON.parse(localStorage.getItem('spellbook_data')) || [];
-            var spellbookModel = { spells: spellbookData };
+
+            var spellbookModel = { spells: _.sortBy(spellbookData, function(item) {
+                return (sortBy && item[sortBy.value]) || item.name;
+            })};
+            if(sortBy && sortBy.desc) spellbookModel.spells.reverse();
 
             localStorage.setItem('spellbook_data', JSON.stringify(spellbookData));
             render('#spellbookTemplate', spellbookModel, $xSpellbook);
@@ -637,10 +649,32 @@
 
                 var spellbook = JSON.parse(localStorage.getItem('spellbook_data'));
                 var spell     = {
-                    id   : String.uuid(),
-                    name : $tar.closest('table').find('.x-spell-name').val()
+                    id    : String.uuid(),
+                    name  : $tar.closest('table').find('.x-spell-name').val(),
+                    level : $tar.closest('table').find('.x-spell-level').val()
                 };
                 spellbook.push(spell);
+
+                localStorage.setItem('spellbook_data', JSON.stringify(spellbook));
+                route('.x-spellbook-panel');
+            });
+
+            $body.on('click', '.x-add-spell-list', function(e) {
+                var $tar = $(e.target);
+
+                var spellbook = JSON.parse(localStorage.getItem('spellbook_data'));
+                var spell     = {
+                    id    : String.uuid(),
+                    name  : $tar.closest('.spell').attr('data-name'),
+                    level : $tar.closest('.spell').attr('data-level')
+                };
+                spellbook.push(spell);
+
+                $('.x-content-panel').hide();
+                $('.x-spellbook-panel').show();
+
+                $('.x-nav a').removeClass('active');
+                $('.x-spellbook-nav').addClass('active');
 
                 localStorage.setItem('spellbook_data', JSON.stringify(spellbook));
                 route('.x-spellbook-panel');
@@ -683,6 +717,18 @@
 
                 localStorage.removeItem('spellbook_data');
                 route('.x-spellbook-panel');
+            });
+
+            var sortLevelDesc = false;
+            $body.on('click', '.x-sort-spell-level', function(e) {
+                loadSpellbookPanel({ value: 'level', desc: sortLevelDesc });
+                sortLevelDesc = !sortLevelDesc
+            });
+
+            var sortNameDesc = false;
+            $body.on('click', '.x-sort-spell-name', function(e) {
+                loadSpellbookPanel({ value: 'name', desc: sortNameDesc });
+                sortNameDesc = !sortNameDesc
             });
         });
     </script>
