@@ -47,9 +47,9 @@
                         <div class="panel" style="width:70%">
                             <header class="panel-header-leftalign">
                                 <h1>Spell List</h1>
-                                <div class="panel-header-controls">
-                                    <div class="input-group input-group-inline">
-                                        <input type="text" class="text x-spell-search" placeholder="search">
+                                <div class="panel-header-controls" style="width:70%">
+                                    <div class="input-group input-group-inline" style="width:100%">
+                                        <input type="text" class="text x-spell-search" placeholder="search" style="width:100%">
                                     </div>
                                 </div>
                             </header>
@@ -129,58 +129,63 @@
                         var matched = [];
 
                         for(var i = 0; i < queryArr.length; i++) {
-                            var query = queryArr[i].toLowerCase();
-                            var next = false;
+                            var queryParams = queryArr[i].toLowerCase().split('|');
 
-                            if(!next && query.length < 3) {
-                                next = true;
-                            }
 
-                            if(!next && query === '') {
-                                matched.push(true);
-                                next = true;
-                            }
+                            for(var w = 0; w < queryParams.length; w++) {
+                                var query = queryParams[w];
+                                var next = false;
 
-                            if(!next) {
-                                if(query === 'cantrip' && spell.level == 0) {
+                                if (!next && query.length < 3) {
+                                    next = true;
+                                }
+
+                                if (!next && query === '') {
                                     matched.push(true);
                                     next = true;
                                 }
-                            }
 
-                            if(!next) {
-                                if(query === 'ritual' && spell.ritual) {
-                                    matched.push(true);
-                                    next = true;
-                                }
-                            }
-
-                            if(!next) {
-                                for(var x = 0; x < 10; x++) {
-                                    if(query === 'level '+x && spell.level == x) {
+                                if (!next) {
+                                    if (query === 'cantrip' && spell.level == 0) {
                                         matched.push(true);
                                         next = true;
-                                        break;
                                     }
                                 }
-                            }
 
-                            if(!next) {
-                                for(var spellClass in spell.classes) {
-                                    if (query === spellClass) {
+                                if (!next) {
+                                    if (query === 'ritual' && spell.ritual) {
                                         matched.push(true);
                                         next = true;
-                                        break;
                                     }
                                 }
-                            }
 
-                            if(!next) {
-                                for (var key in spell) {
-                                    if (findMatch(spell[key], query)) {
-                                        matched.push(true);
-                                        next = true;
-                                        break;
+                                if (!next) {
+                                    for (var x = 0; x < 10; x++) {
+                                        if (query === 'level ' + x && spell.level == x) {
+                                            matched.push(true);
+                                            next = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (!next) {
+                                    for (var spellClass in spell.classes) {
+                                        if (query === spellClass) {
+                                            matched.push(true);
+                                            next = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (!next) {
+                                    for (var key in spell) {
+                                        if (findMatch(spell[key], query)) {
+                                            matched.push(true);
+                                            next = true;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -194,27 +199,31 @@
                             var spell = filteredData[k];
 
                             for(var i = 0; i < queryArr.length; i++) {
-                                var query = queryArr[i];
+                                var queryParams = queryArr[i].split('|');
 
-                                if(query.trim() !== '') {
-                                    for (var j in spell) {
-                                        var string = spell[j].toString();
-                                        if (!!~string.search(query))
-                                            spell[j] = string.replace(query, '<span class="term">' + query + '</span>');
+                                for(var w = 0; w < queryParams.length; w++) {
+                                    var query = queryParams[w];
 
-                                        if (!!~string.search(query.charAt(0).toUpperCase() + query.slice(1)))
-                                            spell[j] = string.replace(query.charAt(0).toUpperCase() + query.slice(1), '<span class="term">' + query.charAt(0).toUpperCase() + query.slice(1) + '</span>');
+                                    if (query.trim() !== '') {
+                                        for (var j in spell) {
+                                            var string = spell[j].toString();
+                                            if (!!~string.search(query))
+                                                spell[j] = string.replace(query, '<span class="term">' + query + '</span>');
 
-                                        if (!!~string.search(query.toLowerCase()))
-                                            spell[j] = string.replace(query.toLowerCase(), '<span class="term">' + query.toLowerCase() + '</span>');
+                                            if (!!~string.search(query.charAt(0).toUpperCase() + query.slice(1)))
+                                                spell[j] = string.replace(query.charAt(0).toUpperCase() + query.slice(1), '<span class="term">' + query.charAt(0).toUpperCase() + query.slice(1) + '</span>');
 
-                                        if (!!~string.search(query.toUpperCase()))
-                                            spell[j] = string.replace(query.toUpperCase(), '<span class="term">' + query.toUpperCase() + '</span>');
+                                            if (!!~string.search(query.toLowerCase()))
+                                                spell[j] = string.replace(query.toLowerCase(), '<span class="term">' + query.toLowerCase() + '</span>');
+
+                                            if (!!~string.search(query.toUpperCase()))
+                                                spell[j] = string.replace(query.toUpperCase(), '<span class="term">' + query.toUpperCase() + '</span>');
+                                        }
                                     }
-                                }
 
-                                for(var j in spell.classes) {
-                                    if(j == query) filteredData[k].classes[j] = 'highlight';
+                                    for (var j in spell.classes) {
+                                        if (j == query) filteredData[k].classes[j] = 'highlight';
+                                    }
                                 }
                             }
                         }

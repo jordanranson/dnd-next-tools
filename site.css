@@ -3,6 +3,10 @@
     border-bottom: solid 1px #f1f1f1;
     margin-bottom: 34px;
     padding-bottom: 34px;
+
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
 }
 
 .spell h2,
@@ -13,14 +17,25 @@
 
 .spell h2 {
     margin-bottom: 0;
+
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+    cursor: text;
 }
 
 .spell h3 {
+    opacity: 0.5;
+
     font-size: 9pt;
     font-weight: 300;
     text-transform: uppercase;
     letter-spacing: 2px;
-    opacity: 0.5;
+
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+    cursor: text;
 }
 
 .spell p span.comma:last-child {
