@@ -27,7 +27,7 @@
                     <div class="panel-group" style="width:780px;height:100%">
 
                         <!-- Navigation panel -->
-                        <div class="panel panel-nav" style="width:20%">
+                        <div class="panel panel-nav" style="width:30%">
                             <header class="panel-header-borderless">
                                 <h1>D&amp;D 5e Tools</h1>
                             </header>
@@ -44,7 +44,7 @@
                         </div>
 
                         <!-- List view -->
-                        <div class="panel" style="width:80%">
+                        <div class="panel" style="width:70%">
                             <header class="panel-header-leftalign">
                                 <h1>Spell List</h1>
                                 <div class="panel-header-controls">
@@ -118,7 +118,12 @@
                 clearTimeout(timer);
                 timer = setTimeout(function() {
                     var rawQuery = $(e.target).val();
-                    var queryArr = rawQuery.replace(', ', ',').split(',');
+                    while(!!~rawQuery.search(', ')) {
+                        rawQuery = rawQuery.replace(', ', ',')
+                    }
+                    console.log(rawQuery);
+
+                    var queryArr = rawQuery.split(',');
 
                     var filteredData = _.filter(JSON.parse(JSON.stringify(spells)), function(spell) {
                         var matched = [];
@@ -128,7 +133,7 @@
                             var next = false;
 
                             if(!next && query.length < 3) {
-                                next = false;
+                                next = true;
                             }
 
                             if(!next && query === '') {
@@ -162,7 +167,7 @@
 
                             if(!next) {
                                 for(var spellClass in spell.classes) {
-                                    if (spell.classes[query]) {
+                                    if (query === spellClass) {
                                         matched.push(true);
                                         next = true;
                                         break;
@@ -191,19 +196,21 @@
                             for(var i = 0; i < queryArr.length; i++) {
                                 var query = queryArr[i];
 
-                                for(var j in spell) {
-                                    var string = spell[j].toString();
-                                    if(!!~string.search(query))
-                                        spell[j] = string.replace(query, '<span class="term">'+query+'</span>');
+                                if(query.trim() !== '') {
+                                    for (var j in spell) {
+                                        var string = spell[j].toString();
+                                        if (!!~string.search(query))
+                                            spell[j] = string.replace(query, '<span class="term">' + query + '</span>');
 
-                                    if(!!~string.search(query.charAt(0).toUpperCase() + query.slice(1)))
-                                        spell[j] = string.replace(query.charAt(0).toUpperCase() + query.slice(1), '<span class="term">'+query.charAt(0).toUpperCase() + query.slice(1)+'</span>');
+                                        if (!!~string.search(query.charAt(0).toUpperCase() + query.slice(1)))
+                                            spell[j] = string.replace(query.charAt(0).toUpperCase() + query.slice(1), '<span class="term">' + query.charAt(0).toUpperCase() + query.slice(1) + '</span>');
 
-                                    if(!!~string.search(query.toLowerCase()))
-                                        spell[j] = string.replace(query.toLowerCase(), '<span class="term">'+query.toLowerCase()+'</span>');
+                                        if (!!~string.search(query.toLowerCase()))
+                                            spell[j] = string.replace(query.toLowerCase(), '<span class="term">' + query.toLowerCase() + '</span>');
 
-                                    if(!!~string.search(query.toUpperCase()))
-                                        spell[j] = string.replace(query.toUpperCase(), '<span class="term">'+query.toUpperCase()+'</span>');
+                                        if (!!~string.search(query.toUpperCase()))
+                                            spell[j] = string.replace(query.toUpperCase(), '<span class="term">' + query.toUpperCase() + '</span>');
+                                    }
                                 }
 
                                 for(var j in spell.classes) {
