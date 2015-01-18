@@ -24,7 +24,7 @@
                 <div class="anchor-content" style="height:100%">
 
                     <!-- Optional panel group -->
-                    <div class="panel-group" style="width:780px;height:100%">
+                    <div class="panel-group" style="width:1024px;height:100%">
 
                         <!-- Navigation panel -->
                         <div class="panel panel-nav" style="width:30%">
@@ -36,9 +36,10 @@
 
                                     <ul class="list list-nav x-nav">
                                         <li class="list-nav-header"><h2>Tools</h2></li>
-                                        <li><a href="javascript:void(0)" data-for="x-inventory-panel">Inventory Manager</a></li>
+                                        <li><a href="javascript:void(0)" data-for="x-inventory-panel">Inventory</a></li>
+                                        <li><a href="javascript:void(0)" data-for="x-spellbook-panel">Spell Book</a></li>
                                         <li class="list-nav-header"><h2>Reference</h2></li>
-                                        <li><a href="javascript:void(0)" data-for="x-spell-panel" class="active">Spell List</a></li>
+                                        <li><a href="javascript:void(0)"class="x-spell-nav" data-for="x-spell-panel" class="active">Spell List</a></li>
                                     </ul>
 
                                 </div>
@@ -83,6 +84,22 @@
 
                                     <div class="x-item-containers">
                                     </div>
+                                </div>
+                            </section>
+                        </div>
+
+
+                        <div class="panel x-spellbook-panel x-content-panel" style="width:70%;display:none">
+                            <header class="panel-header-leftalign">
+                                <h1>Spell Book</h1>
+                                <div class="panel-header-controls">
+                                    <div class="input-group input-group-inline">
+                                        <button class="button button-dangerous x-clear-spellbook">Reset</button>
+                                    </div>
+                                </div>
+                            </header>
+                            <section class="panel-content-scroll x-drop-target">
+                                <div class="panel-body panel-body-padded x-spellbook">
                                 </div>
                             </section>
                         </div>
@@ -141,14 +158,46 @@
                 <tr class="x-item-row" data-id="{{id}}">
                     <td>{{name}}</td>
                     <td class="cell-center"><a href="javascript:void(0)" class="x-change-item-qty">{{qty}}</a></td>
-                    <td class="cell-center"><span class="item-value"><span>{{value}}g</span><span><em>{{totalValue value qty}}g</em></span></span></td>
-                    <td class="cell-center"><a href="javascript:void(0)" class="x-remove-item">Remove</a></td>
+                    <td class="cell-center"><span class="item-value"><span>{{displayValue value}}</span><span><em>{{totalValue value qty}}</em></span></span></td>
+                    <td class="cell-center"><a href="javascript:void(0)" class="x-remove-item error">Remove</a></td>
                 </tr>
                 {{/each}}
                 </tbody>
             </table>
         </div>
         {{/each}}
+    </script>
+
+    <script id="spellbookTemplate" type="text/x-handlebars">
+        <table class="table table-wide table-inventory">
+            <colgroup>
+                <col width="45%">
+                <col width="35%">
+                <col width="20%">
+            </colgroup>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th class="cell-center"></th>
+                <th class="cell-center"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr class="input-row x-input-row">
+                <td colspan="2">
+                    <input type="text" class="text x-spell-name" placeholder="spell name">
+                </td>
+                <td class="cell-center"><button class="button x-add-spell">Add</button></td>
+            </tr>
+            {{#each spells}}
+            <tr class="x-item-row" data-id="{{id}}" data-name="{{name}}">
+                <td>{{name}}</td>
+                <td class="cell-center"><a href="javascript:void(0)" class="x-view-spell">View in Spell List</a></td>
+                <td class="cell-center"><a href="javascript:void(0)" class="x-remove-spell error">Remove</a></td>
+            </tr>
+            {{/each}}
+            </tbody>
+        </table>
     </script>
 
     <script>
@@ -164,7 +213,11 @@
         });
 
         Handlebars.registerHelper('totalValue', function(value, qty) {
-            return value * qty;
+            return formatGold(value * qty);
+        });
+
+        Handlebars.registerHelper('displayValue', function(value) {
+            return formatGold(value);
         });
 
         String.uuid = (function() {
@@ -179,6 +232,27 @@
             };
         })();
 
+        function formatGold(amount) {
+            var string = '';
+
+            /*string += amount % (100 * 100 * 100);
+            string += 'g ';
+            string += amount / 100 % (100 * 100 * 100);
+            string += 's ';
+            string += amount % (100 * 100 * 100);
+            string += 'c ';*/
+
+            var gold   = Math.floor(amount / 100 / 100);
+            var silver = Math.floor(((amount  - (gold * 100 * 100)) / 100));
+            var copper = amount - (gold * 100 * 100) - (silver * 100);
+
+            if(gold   > 0) string += gold   + 'g ';
+            if(silver > 0) string += silver + 's ';
+            if(copper > 0) string += copper + 'c ';
+
+            return string;
+        }
+
         function renderSpellList(data) {
             var source        = $("#spellTemplate").html();
             var template      = Handlebars.compile(source);
@@ -192,11 +266,112 @@
             return !!~(str.toString().toLowerCase().search(query));
         }
 
-        function loadSpellList(data) {
+        function loadSpellList(data, query) {
             renderSpellList(data);
 
             var $xSpellSearch = $('.x-spell-search');
+            $xSpellSearch.val(query || '');
+            $xSpellSearch.trigger('keyup');
+        }
+
+        function onDrop(e) {
+            e.preventDefault();
+
+            var file = e.dataTransfer.files[0];
+            var reader = new FileReader();
+            reader.onload = function () {
+                var data = JSON.parse(this.result);
+                _spells = data;
+                loadSpellList(data);
+            };
+            reader.readAsText(file);
+        }
+
+        function onDragOver(e) {
+            return false;
+        }
+
+        function onDragEnd(e) {
+            return false;
+        }
+
+        function render(selector, model, $container) {
+            var source   = $(selector).html();
+            var template = Handlebars.compile(source);
+            var html     = template(model);
+            $container.html(html);
+        }
+
+        function loadInventoryPanel() {
+            var $xItemContainers = $('.x-item-containers');
+            var backpack = {
+                id    : String.uuid(),
+                name  : "Adventurer's Backpack",
+                items : []
+            };
+            var containerData  = JSON.parse(localStorage.getItem('inventory_data')) || [backpack];
+            var containerModel = { containers: containerData };
+
+            localStorage.setItem('inventory_data', JSON.stringify(containerData));
+
+            render('#itemContainerTemplate', containerModel, $xItemContainers);
+        }
+
+        function loadSpellPanel(query) {
+            if(!_spells) {
+                $.get('./spells.json')
+                .success(function(data) {
+                    _spells = data;
+                    loadSpellList(data, query);
+                });
+            }
+            else {
+                loadSpellList(_spells, query);
+            }
+        }
+
+        function loadSpellbookPanel() {
+            var $xSpellbook    = $('.x-spellbook');
+            var spellbookData  = JSON.parse(localStorage.getItem('spellbook_data')) || [];
+            var spellbookModel = { spells: spellbookData };
+
+            localStorage.setItem('spellbook_data', JSON.stringify(spellbookData));
+            render('#spellbookTemplate', spellbookModel, $xSpellbook);
+        }
+
+        function route(container) {
+            switch(container) {
+                case '.x-inventory-panel' : loadInventoryPanel(); break;
+                case '.x-spell-panel'     : loadSpellPanel(); break;
+                case '.x-spellbook-panel' : loadSpellbookPanel(); break;
+            }
+        }
+
+        $(function() {
+            var $body = $('body');
+
+            var $xDropTarget = $('.x-drop-target');
+            $xDropTarget.on('dragover', onDragOver);
+            $xDropTarget.on('dragend',  onDragEnd);
+            $xDropTarget[0].addEventListener('drop', onDrop);
+
+            route('.x-spell-panel');
+
+            $body.on('click', '.x-nav a', function(e) {
+                var $tar = $(e.target);
+                var forContainer = '.'+$tar.attr('data-for');
+
+                $('.x-content-panel').hide();
+                $(forContainer).show();
+
+                $('.x-nav a').removeClass('active');
+                $tar.addClass('active');
+
+                route(forContainer);
+            });
+
             var timer;
+            var $xSpellSearch = $('.x-spell-search');
             $xSpellSearch.on('keyup', function(e) {
                 clearTimeout(timer);
                 timer = setTimeout(function() {
@@ -204,7 +379,6 @@
                     while(!!~rawQuery.search(', ')) {
                         rawQuery = rawQuery.replace(', ', ',')
                     }
-                    console.log(rawQuery);
 
                     var queryArr = rawQuery.split(',');
 
@@ -315,94 +489,11 @@
                     renderSpellList(filteredData);
                 }, 350);
             });
-        }
 
-        function onDrop(e) {
-            e.preventDefault();
 
-            var file = e.dataTransfer.files[0];
-            var reader = new FileReader();
-            reader.onload = function () {
-                var data = JSON.parse(this.result);
-                _spells = data;
-                loadSpellList(data);
-            };
-            reader.readAsText(file);
-        }
-
-        function onDragOver(e) {
-            return false;
-        }
-
-        function onDragEnd(e) {
-            return false;
-        }
-
-        function render(selector, model, $container) {
-            var source   = $(selector).html();
-            var template = Handlebars.compile(source);
-            var html     = template(model);
-            $container.html(html);
-        }
-
-        function loadInventoryPanel() {
-            var $xItemContainers = $('.x-item-containers');
-            var backpack = {
-                id    : String.uuid(),
-                name  : "Adventurer's Backpack",
-                items : []
-            };
-            var containerData  = JSON.parse(localStorage.getItem('inventory_data')) || [backpack];
-            var containerModel = { containers: containerData };
-
-            localStorage.setItem('inventory_data', JSON.stringify(containerData));
-
-            render('#itemContainerTemplate', containerModel, $xItemContainers);
-        }
-
-        function loadSpellPanel() {
-            if(!_spells) {
-                $.get('./spells.json')
-                .success(function(data) {
-                    _spells = data;
-                    loadSpellList(data);
-                });
-            }
-            else {
-                loadSpellList(_spells);
-            }
-        }
-
-        function route(container) {
-            console.log(container);
-            switch(container) {
-                case '.x-inventory-panel' : loadInventoryPanel(); break;
-                case '.x-spell-panel'     : loadSpellPanel(); break;
-            }
-        }
-
-        $(function() {
-            var $body = $('body');
-
-            var $xDropTarget = $('.x-drop-target');
-            $xDropTarget.on('dragover', onDragOver);
-            $xDropTarget.on('dragend',  onDragEnd);
-            $xDropTarget[0].addEventListener('drop', onDrop);
-
-            route('.x-spell-panel');
-
-            $body.on('click', '.x-nav a', function(e) {
-                var $tar = $(e.target);
-                var forContainer = '.'+$tar.attr('data-for');
-
-                $('.x-content-panel').hide();
-                $(forContainer).show();
-
-                $('.x-nav a').removeClass('active');
-                $tar.addClass('active');
-
-                route(forContainer);
-            });
+            /*
+             * Inventory
+             */
 
             $body.on('click', '.x-add-item-container', function(e) {
                 var $xContainerName = $('.x-container-name');
@@ -457,6 +548,15 @@
                 var name   = $table.find('.x-item-name').val();
                 var qty    = $table.find('.x-item-qty').val();
                 var value  = $table.find('.x-item-value').val();
+
+                if(name === '' || !(Number(qty) >= 0) || !(Number(value) >= 0) ) return;
+
+                if(!!~value.search('c')) value = value.replace('c', '').trim();
+                else if(!!~value.search('s')) value = Number(value.replace('s', '').trim()) * 100;
+                else value = Number(value.replace('g', '').trim()) * 100 * 100;
+
+                //value = value.split('.');
+                //value = value[0] * (value[1] * 100) + (value[2] * 100 * 100);
 
                 var containers = JSON.parse(localStorage.getItem('inventory_data'));
                 for(var i = 0; i < containers.length; i++) {
@@ -525,6 +625,64 @@
 
                 localStorage.setItem('inventory_data', JSON.stringify(containers));
                 route('.x-inventory-panel');
+            });
+
+
+            /*
+             * Spell book
+             */
+
+            $body.on('click', '.x-add-spell', function(e) {
+                var $tar = $(e.target);
+
+                var spellbook = JSON.parse(localStorage.getItem('spellbook_data'));
+                var spell     = {
+                    id   : String.uuid(),
+                    name : $tar.closest('table').find('.x-spell-name').val()
+                };
+                spellbook.push(spell);
+
+                localStorage.setItem('spellbook_data', JSON.stringify(spellbook));
+                route('.x-spellbook-panel');
+            });
+
+            $body.on('click', '.x-remove-spell', function(e) {
+                if(!confirm('Are you sure you want to forget this spell?')) return;
+
+                var $tar = $(e.target);
+                var id   = $tar.closest('.x-item-row').attr('data-id');
+
+                var spellbook = JSON.parse(localStorage.getItem('spellbook_data'));
+                for(var i = 0; i < spellbook.length; i++) {
+                    console.log(spellbook[i]);
+                    if(spellbook[i].id == id) {
+                        spellbook.splice(i, 1);
+                        break;
+                    }
+                }
+
+                localStorage.setItem('spellbook_data', JSON.stringify(spellbook));
+                route('.x-spellbook-panel');
+            });
+
+            $body.on('click', '.x-view-spell', function(e) {
+                var $tar = $(e.target);
+                var spellName = $tar.closest('.x-item-row').attr('data-name');
+
+                $('.x-content-panel').hide();
+                $('.x-spell-panel').show();
+
+                $('.x-nav a').removeClass('active');
+                $('.x-spell-nav').addClass('active');
+
+                loadSpellPanel(spellName);
+            });
+
+            $body.on('click', '.x-clear-spellbook', function(e) {
+                if(!confirm('Are you sure you want reset your spell book?')) return;
+
+                localStorage.removeItem('spellbook_data');
+                route('.x-spellbook-panel');
             });
         });
     </script>
