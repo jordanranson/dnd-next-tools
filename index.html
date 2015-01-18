@@ -14,238 +14,205 @@
     <link rel="stylesheet" type="text/css" href="site.css">
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
 </head>
 <body>
-    <!-- spell list -->
+    <div class="app">
+        <div class="anchor anchor-offset-thick anchor-center">
+            <div class="anchor-wrapper">
+                <div class="anchor-content" style="height:100%">
 
-<textarea id="convert">A i d
-2 nd-level abjuration
-Casting Time: 1 action
-Range: 30 feet
-Components: V, S, M (a tiny strip o f white cloth)
-Duration: 8 hours
-Your spell bolsters your allies with toughness and
-resolve. C hoose up to three creatures within range.
-Each target’s hit point maximum and current hit points
-increase by 5 for the duration.
-A t Higher Levels. W hen you cast this spell using
-a spell slot of 3rd level or higher, a target’s hit points
-increase by an additional 5 for each slot level above 2nd.
+                    <!-- Optional panel group -->
+                    <div class="panel-group" style="width:780px;height:100%">
 
-A n t i p a t h y / S y m p a t h y
-8 th-level enchantment
-Casting Time: 1 hour
-Range: 60 feet
-Components: V, S, M (either a lump of alum soaked in
-vinegar for the antipathy effect or a drop of honey for
-the sympathy effect)
-Duration: 10 days
-This spell attracts or repels creatures of your choice.
-You target som ething within range, either a Huge or
-sm aller object or creature or an area that is no larger
-than a 200-foot cube. Then specify a kind of intelligent
-creature, such as red dragons, goblins, or vampires.
-You invest the target with an aura that either attracts or
-repels the specified creatures for the duration. Choose
-antipathy or sympathy as the aura’s effect.
-Antipathy. The enchantment causes creatures of the
-kind you designated to feel an intense urge to leave the
-area and avoid the target. W hen such a creature can
-see the target or com es within 60 feet of it, the creature
-must succeed on a W isdom saving throw or becom e
-frightened. The creature remains frightened while it can
-see the target or is within 60 feet of it. W hile frightened
-by the target, the creature must use its movement to
-perpendicular to it at the points you choose. A ring is
-visible only from one side (your choice), which is the side
-that functions as a portal.
-Any creature or object entering the portal exits from
-the other portal as if the two were adjacent to each
-other; passing through a portal from the nonportal side
-has no effect. The mist that fills each portal is opaque
-and blocks vision through it. On your turn, you can
-rotate the rings as a bonus action so that the active side
-faces in a different direction.
+                        <!-- Navigation panel -->
+                        <div class="panel panel-nav" style="width:20%">
+                            <header class="panel-header-borderless">
+                                <h1>D&amp;D 5e Tools</h1>
+                            </header>
+                            <section>
+                                <div class="panel-body">
 
-B l i g h t
-4th-level necromancy
-Casting Time: 1 action
-Range: 30 feet
-Components: V, S
-Duration: Instantaneous
-Necrom antic energy w ashes over a creature of your
-choice that you can see within range, draining moisture
-and vitality from it. The target must make a Constitution
-saving throw. The target takes 8d8 necrotic damage on
-a failed save, or half as much damage on a successful
-one. This spell has no effect on undead or constructs.
-If you target a plant creature or a magical plant, it
-m akes the saving throw with disadvantage, and the spell
-deals maximum damage to it.
-If you target a nonm agical plant that isn’t a creature,
-such as a tree or shrub, it doesn’t make a saving throw;
-it simply withers and dies.
-At Higher Levels. W hen you cast this spell using a
-spell slot o f 5th level or higher, the damage increases by
-1d8 for each slot level above 4th.</textarea>
+                                    <ul class="list list-nav">
+                                        <li class="list-nav-header"><h2>Reference</h2></li>
+                                        <li><a href="#" class="active">Spell List</a></li>
+                                    </ul>
+
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- List view -->
+                        <div class="panel" style="width:80%">
+                            <header class="panel-header-leftalign">
+                                <h1>Spell List</h1>
+                                <div class="panel-header-controls">
+                                    <div class="input-group input-group-inline">
+                                        <input type="text" class="text x-spell-search" placeholder="search">
+                                    </div>
+                                </div>
+                            </header>
+                            <section class="panel-content-scroll">
+                                <div class="panel-body panel-body-padded x-spells">
+                                </div>
+                            </section>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script id="spellTemplate" type="text/x-handlebars">
+        {{#each spells}}
+            <div class="spell">
+                <h2>{{{name}}}</h2>
+                <h3>Level {{{level}}}, {{{school}}}{{#if ritual}}, ritual{{/if}}</h3>
+                <p><strong>Casting Time</strong> {{{casting_time}}}</p>
+                <p><strong>Range</strong> {{{range}}}</p>
+                <p><strong>Components</strong> {{{components}}}</p>
+                <p><strong>Duration</strong> {{{duration}}}</p>
+                <p><strong>Classes</strong> {{{listClasses classes}}}</p>
+                <p>{{{description}}}</p>
+            </div>
+        {{/each}}
+    </script>
 
     <script>
-        function parseName(str) {
-            str = str.replace('  ', '@@@');
-            str = str.replace(/\s/g, '');
-            str = str.replace('@@@', ' ');
+        Handlebars.registerHelper('listClasses', function(classes) {
+            var value = '';
+            for(var key in classes) {
+                if(classes[key] === 'highlight') value += '<span class="term">'+key+'</span><span class="comma">, </span>';
+                else if(classes[key]) value += key+'<span class="comma">, </span>';
+            }
+            return value;
+        });
 
-            return str;
+        function renderSpellList(data) {
+            var source        = $("#spellTemplate").html();
+            var template      = Handlebars.compile(source);
+            var html          = template({ spells: data });
+            var $xSpells      = $('.x-spells');
+
+            $xSpells.html(html);
         }
 
-        function parseType(str) {
-            var regex = /([A-Z0-9]\s)+/g;
-            var match;
-            while ((match = regex.exec(str)) != null) {
-                str = str.replace(match[0], match[0].replace(' ', ''));
-            }
-
-            return str;
+        function findMatch(str, query) {
+            return !!~(str.toString().toLowerCase().search(query));
         }
 
-        function parseComponents(str) {
-            var regex = /([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\s[a-zA-Z0-9]\s)+/g;
-            var match;
-            while ((match = regex.exec(str)) != null) {
-                str = str.replace(match[0], match[0].slice(0,match[0].length-1));
-            }
+        var spells;
+        $.get('./spells.json', function(data) {
+            spells = data;
+            renderSpellList(data);
 
-            return str;
-        }
+            var $xSpellSearch = $('.x-spell-search');
+            var timer;
+            $xSpellSearch.on('keyup', function(e) {
+                clearTimeout(timer);
+                timer = setTimeout(function() {
+                    var rawQuery = $(e.target).val();
+                    var queryArr = rawQuery.replace(', ', ',').split(',');
 
-        function parseText(str) {
-            var regex = /([A-Z]\s)+/g;
-            var match;
-            while ((match = regex.exec(str)) != null) {
-                str = str.replace(match[0], match[0].replace(' ', ''));
-            }
-            regex = /([a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\s[a-zA-Z0-9]\s)+/g;
-            while ((match = regex.exec(str)) != null) {
-                str = str.replace(match[0], match[0].slice(0,match[0].length-1));
-            }
-            str = str.replace('’', "'");
+                    var filteredData = _.filter(JSON.parse(JSON.stringify(spells)), function(spell) {
+                        var matched = [];
 
-            return str;
-        }
+                        for(var i = 0; i < queryArr.length; i++) {
+                            var query = queryArr[i].toLowerCase();
+                            var next = false;
 
+                            if(!next && query.length < 3) {
+                                next = false;
+                            }
 
-        // get raw data
-        var rawData   = $('#convert').val();
-        var lines     = rawData.split('\n');
-        var rawSpells = [];
+                            if(!next && query === '') {
+                                matched.push(true);
+                                next = true;
+                            }
 
-        // process raw data into lists of lines for each spell
-        var rawSpell = null;
-        for(var i = 0; i < lines.length; i++) {
-            var line = lines[i];
-            if (rawSpell === null) {
-                rawSpell = [];
-                rawSpells.push(rawSpell);
-            }
-            if(line === "") rawSpell = null;
-            else rawSpell.push(line);
-        }
+                            if(!next) {
+                                if(query === 'cantrip' && spell.level == 0) {
+                                    matched.push(true);
+                                    next = true;
+                                }
+                            }
 
-        // process raw spell data into spell objects
-        var spells = [];
-        for(var i = 0; i < rawSpells.length; i++) {
-            var spellData = rawSpells[i];
-            var spell     = {
-                description: []
-            };
+                            if(!next) {
+                                if(query === 'ritual' && spell.ritual) {
+                                    matched.push(true);
+                                    next = true;
+                                }
+                            }
 
-            var text = '';
-            for(var k = 0; k < spellData.length; k++) {
-                var line = spellData[k];
+                            if(!next) {
+                                for(var x = 0; x < 10; x++) {
+                                    if(query === 'level '+x && spell.level == x) {
+                                        matched.push(true);
+                                        next = true;
+                                        break;
+                                    }
+                                }
+                            }
 
-                switch(k) {
-                    case 0: spell.name        = parseName(line); break;
-                    case 1: spell.types       = parseType(line).split(' '); break;
-                    case 2: spell.castingTime = line.replace('Casting Time: ', ''); break;
-                    case 3: spell.range       = line.replace('Range: ', ''); break;
-                    //case 4: spell.components  = parseComponents(line.replace('Components: ', '')); break;
-                    //case 5: spell.duration    = line.replace('Duration: ', ''); break;
-                }
+                            if(!next) {
+                                for(var spellClass in spell.classes) {
+                                    if (spell.classes[query]) {
+                                        matched.push(true);
+                                        next = true;
+                                        break;
+                                    }
+                                }
+                            }
 
-                if(paragraph === null) paragraph = { text: '', title: '' };
-                if(k > 5) {
-                    text += parseText(line) + ' ';
-
-                    /*var sentences = line.split('.');
-                    var nextParagraph = true;
-                    var sentence;
-                    for(var x = 0; x < sentences.length; x++) {
-                        sentence = parseText(sentences[x]);
-                        console.log(sentence);
-
-                        var words = sentence.split(' ');
-                        var wordRegex = /[a-z]/g;
-                        for (var j = 0; j < words.length; j++) {
-                            var word = words[j];
-                            if (wordRegex.exec(word.charAt(0))) {
-                                nextParagraph = false;
-                                break;
+                            if(!next) {
+                                for (var key in spell) {
+                                    if (findMatch(spell[key], query)) {
+                                        matched.push(true);
+                                        next = true;
+                                        break;
+                                    }
+                                }
                             }
                         }
 
-                        if(nextParagraph) {
-                            paragraph.title = sentence;
+                        return rawQuery === '' ? true : matched.length >= queryArr.length;
+                    });
+
+                    if(rawQuery !== '') {
+                        for(var k = 0; k < filteredData.length; k++) {
+                            var spell = filteredData[k];
+
+                            for(var i = 0; i < queryArr.length; i++) {
+                                var query = queryArr[i];
+
+                                for(var j in spell) {
+                                    var string = spell[j].toString();
+                                    if(!!~string.search(query))
+                                        spell[j] = string.replace(query, '<span class="term">'+query+'</span>');
+
+                                    if(!!~string.search(query.charAt(0).toUpperCase() + query.slice(1)))
+                                        spell[j] = string.replace(query.charAt(0).toUpperCase() + query.slice(1), '<span class="term">'+query.charAt(0).toUpperCase() + query.slice(1)+'</span>');
+
+                                    if(!!~string.search(query.toLowerCase()))
+                                        spell[j] = string.replace(query.toLowerCase(), '<span class="term">'+query.toLowerCase()+'</span>');
+
+                                    if(!!~string.search(query.toUpperCase()))
+                                        spell[j] = string.replace(query.toUpperCase(), '<span class="term">'+query.toUpperCase()+'</span>');
+                                }
+
+                                for(var j in spell.classes) {
+                                    if(j == query) filteredData[k].classes[j] = 'highlight';
+                                }
+                            }
                         }
                     }
 
-                    if (nextParagraph) {
-                        paragraph.text = parseText(line) + ' ';
-                        spell.description.push(paragraph);
-                        paragraph = null;
-                        break;
-                    }*/
-                }
-            }
-
-            var sentences = text.split('. ');
-                sentences.splice(sentences.length-1, sentences.length);
-
-            var paragraph    = null;
-            var lastSentence = '';
-            for(var y = 0; y < sentences.length; y++) {
-                paragraph         = paragraph === null ? { text: '', title: '' } : paragraph;
-                var nextParagraph = true;
-                var sentence      = sentences[y];
-                var words         = sentence.split(' ');
-                var wordRegex     = /[a-z]/g;
-
-                for (var j = 0; j < words.length; j++) {
-                    var word = words[j];
-                    if (wordRegex.exec(word.charAt(0)) !== null) {
-                        nextParagraph = false;
-                        break;
-                    }
-                }
-
-                if(!nextParagraph) paragraph.text += sentence + (y===sentences.length-1?'.':'. ');
-                if(nextParagraph || y === sentences.length-1) {
-                    paragraph.title = lastSentence;
-                    lastSentence = sentence;
-                    spell.description.push(JSON.parse(JSON.stringify(paragraph)));
-                    paragraph = null;
-                }
-            }
-
-            //console.log(text, sentences);
-
-            spells.push(spell);
-        }
-
-        console.log(spells);
-
-        /*var regex   = /abc/g;
-        var matches = regex.exec(rawData);
-        console.log(matches)*/
+                    renderSpellList(filteredData);
+                }, 350);
+            });
+        });
     </script>
 </body>
 </html>
