@@ -152,7 +152,7 @@
     </script>
 
     <script>
-        var spells;
+        var _spells = null;
 
         Handlebars.registerHelper('listClasses', function(classes) {
             var value = '';
@@ -193,7 +193,7 @@
         }
 
         function loadSpellList(data) {
-            spells = data;
+            _spells = data;
             renderSpellList(data);
 
             var $xSpellSearch = $('.x-spell-search');
@@ -209,7 +209,7 @@
 
                     var queryArr = rawQuery.split(',');
 
-                    var filteredData = _.filter(JSON.parse(JSON.stringify(spells)), function(spell) {
+                    var filteredData = _.filter(JSON.parse(JSON.stringify(_spells)), function(spell) {
                         var matched = [];
 
                         for(var i = 0; i < queryArr.length; i++) {
@@ -360,17 +360,15 @@
             render('#itemContainerTemplate', containerModel, $xItemContainers);
         }
 
-        var localData = null;
         function loadSpellPanel() {
-            if(!localData) {
+            if(!_spells) {
                 $.get('./spells.json')
                 .success(function(data) {
-                    localData = data;
                     loadSpellList(data);
                 });
             }
             else {
-                loadSpellList(localData);
+                loadSpellList(_spells);
             }
         }
 
