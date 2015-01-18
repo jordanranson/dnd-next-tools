@@ -1,3 +1,7 @@
+.panel-nav a.active {
+    cursor: default;
+}
+
 .spell {
     line-height: 1.4em;
     border-bottom: solid 1px #f1f1f1;
