@@ -193,7 +193,6 @@
         }
 
         function loadSpellList(data) {
-            _spells = data;
             renderSpellList(data);
 
             var $xSpellSearch = $('.x-spell-search');
@@ -325,6 +324,7 @@
             var reader = new FileReader();
             reader.onload = function () {
                 var data = JSON.parse(this.result);
+                _spells = data;
                 loadSpellList(data);
             };
             reader.readAsText(file);
@@ -364,6 +364,7 @@
             if(!_spells) {
                 $.get('./spells.json')
                 .success(function(data) {
+                    _spells = data;
                     loadSpellList(data);
                 });
             }
