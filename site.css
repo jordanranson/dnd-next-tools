@@ -31,3 +31,20 @@
     background-color: #ff6;
     color: #000;
 }
+
+.drop-target {
+    position: absolute;
+    box-sizing: border-box;
+
+    top: 50%;
+    left: 50%;
+    width: 280px;
+    margin-left: -140px;
+    margin-top: -80px;
+    padding: 40px 0;
+
+    border: solid 1px #ccc;
+    border-radius: 10px;
+
+    text-align: center;
+}
