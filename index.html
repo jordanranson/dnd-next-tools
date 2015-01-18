@@ -34,17 +34,18 @@
                             <section>
                                 <div class="panel-body">
 
-                                    <ul class="list list-nav">
+                                    <ul class="list list-nav x-nav">
+                                        <li class="list-nav-header"><h2>Tools</h2></li>
+                                        <li><a href="javascript:void(0)" data-for="x-inventory-panel">Inventory Manager</a></li>
                                         <li class="list-nav-header"><h2>Reference</h2></li>
-                                        <li><a href="#" class="active">Spell List</a></li>
+                                        <li><a href="javascript:void(0)" data-for="x-spell-panel" class="active">Spell List</a></li>
                                     </ul>
 
                                 </div>
                             </section>
                         </div>
 
-                        <!-- List view -->
-                        <div class="panel" style="width:70%">
+                        <div class="panel x-spell-panel x-content-panel" style="width:70%">
                             <header class="panel-header-leftalign">
                                 <h1>Spell List</h1>
                                 <div class="panel-header-controls" style="width:70%">
@@ -57,6 +58,30 @@
                                 <div class="panel-body panel-body-padded x-spells">
                                     <div class="drop-target">
                                         Drop spell data file here.
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="panel x-inventory-panel x-content-panel" style="width:70%;display:none">
+                            <header class="panel-header-leftalign">
+                                <h1>Inventory</h1>
+                                <div class="panel-header-controls">
+                                    <div class="input-group input-group-inline">
+                                        <button class="button button-dangerous x-clear-inventory">Reset</button>
+                                    </div>
+                                </div>
+                            </header>
+                            <section class="panel-content-scroll x-drop-target">
+                                <div class="panel-body panel-body-padded x-inventory">
+                                    <div class="input-group">
+                                        <h1>Add Container</h1>
+                                        <input type="text" class="text x-container-name" placeholder="container name">
+                                        <button class="button button-primary x-add-item-container">Equip</button>
+                                    </div>
+                                    <br>
+
+                                    <div class="x-item-containers">
                                     </div>
                                 </div>
                             </section>
@@ -83,6 +108,49 @@
         {{/each}}
     </script>
 
+    <script id="itemContainerTemplate" type="text/x-handlebars">
+        {{#each containers}}
+        <div class="group x-item-container" data-id="{{id}}">
+            <h1>
+                {{name}} &nbsp;
+                <small><a class="error x-remove-container" href="javascript:void(0)">Remove</a></small>
+            </h1>
+            <table class="table table-wide table-inventory">
+                <colgroup>
+                    <col width="40%">
+                    <col width="15%">
+                    <col width="25%">
+                    <col width="30%">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th class="cell-center">Qty.</th>
+                    <th class="cell-center"><span class="item-value"><span>Value</span><span><em>Total Value</em></span></span></th>
+                    <th class="cell-right"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="input-row x-input-row">
+                    <td><input type="text" class="text x-item-name" placeholder="name" name="item-name"></td>
+                    <td class="cell-center"><input type="text" class="text cell-center x-item-qty" placeholder="qty"></td>
+                    <td class="cell-center"><input type="text" class="text cell-center x-item-value" placeholder="value"></td>
+                    <td class="cell-center"><button class="button x-add-item">Add</button></td>
+                </tr>
+                {{#each items}}
+                <tr class="x-item-row" data-id="{{id}}">
+                    <td>{{name}}</td>
+                    <td class="cell-center"><a href="javascript:void(0)" class="x-change-item-qty">{{qty}}</a></td>
+                    <td class="cell-center"><span class="item-value"><span>{{value}}g</span><span><em>{{totalValue value qty}}g</em></span></span></td>
+                    <td class="cell-center"><a href="javascript:void(0)" class="x-remove-item">Remove</a></td>
+                </tr>
+                {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{/each}}
+    </script>
+
     <script>
         var spells;
 
@@ -94,6 +162,22 @@
             }
             return value;
         });
+
+        Handlebars.registerHelper('totalValue', function(value, qty) {
+            return value * qty;
+        });
+
+        String.uuid = (function() {
+            function s4() {
+                return Math.floor((1 + Math.random()) * 0x10000)
+                        .toString(16)
+                        .substring(1);
+            }
+            return function() {
+                return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                        s4() + '-' + s4() + s4() + s4();
+            };
+        })();
 
         function renderSpellList(data) {
             var source        = $("#spellTemplate").html();
@@ -237,8 +321,6 @@
         function onDrop(e) {
             e.preventDefault();
 
-            console.log(e);
-
             var file = e.dataTransfer.files[0];
             var reader = new FileReader();
             reader.onload = function () {
@@ -256,17 +338,194 @@
             return false;
         }
 
+        function render(selector, model, $container) {
+            var source   = $(selector).html();
+            var template = Handlebars.compile(source);
+            var html     = template(model);
+            $container.html(html);
+        }
+
+        function loadInventoryPanel() {
+            var $xItemContainers = $('.x-item-containers');
+            var backpack = {
+                id    : String.uuid(),
+                name  : "Adventurer's Backpack",
+                items : []
+            };
+            var containerData  = JSON.parse(localStorage.getItem('inventory_data')) || [backpack];
+            var containerModel = { containers: containerData };
+
+            localStorage.setItem('inventory_data', JSON.stringify(containerData));
+
+            render('#itemContainerTemplate', containerModel, $xItemContainers);
+        }
+
+        var localData = null;
+        function loadSpellPanel() {
+            if(!localData) {
+                $.get('./spells.json')
+                .success(function(data) {
+                    localData = data;
+                    loadSpellList(data);
+                });
+            }
+            else {
+                loadSpellList(localData);
+            }
+        }
+
+        function route(container) {
+            console.log(container);
+            switch(container) {
+                case '.x-inventory-panel' : loadInventoryPanel(); break;
+                case '.x-spell-panel'     : loadSpellPanel(); break;
+            }
+        }
 
         $(function() {
+            var $body = $('body');
+
             var $xDropTarget = $('.x-drop-target');
             $xDropTarget.on('dragover', onDragOver);
             $xDropTarget.on('dragend',  onDragEnd);
             $xDropTarget[0].addEventListener('drop', onDrop);
 
-            var localData = null;
-            $.get('./spells.json')
-            .success(function(data) {
-                loadSpellList(data);
+            route('.x-spell-panel');
+
+            $body.on('click', '.x-nav a', function(e) {
+                var $tar = $(e.target);
+                var forContainer = '.'+$tar.attr('data-for');
+
+                $('.x-content-panel').hide();
+                $(forContainer).show();
+
+                $('.x-nav a').removeClass('active');
+                $tar.addClass('active');
+
+                route(forContainer);
+            });
+
+            $body.on('click', '.x-add-item-container', function(e) {
+                var $xContainerName = $('.x-container-name');
+                var containerName   = $xContainerName.val().trim();
+
+                if(containerName.length === 0) return;
+
+                var container = {
+                    id    : String.uuid(),
+                    name  : containerName,
+                    items : []
+                };
+
+                var containers = JSON.parse(localStorage.getItem('inventory_data'));
+                containers.push(container);
+
+                localStorage.setItem('inventory_data', JSON.stringify(containers));
+                route('.x-inventory-panel');
+            });
+
+            $body.on('click', '.x-remove-container', function(e) {
+                if(!confirm('Are you sure you want to destroy this container?')) return;
+
+                var $tar = $(e.target);
+                var id   = $tar.closest('.x-item-container').attr('data-id');
+
+                var containers = JSON.parse(localStorage.getItem('inventory_data'));
+                for(var i = 0; i < containers.length; i++) {
+                    var c = containers[i];
+                    if(c.id === id) {
+                        containers.splice(i, 1);
+                        break;
+                    }
+                }
+
+                localStorage.setItem('inventory_data', JSON.stringify(containers));
+                route('.x-inventory-panel');
+            });
+
+            $body.on('click', '.x-clear-inventory', function(e) {
+                if(!confirm('Are you sure you want reset your inventory?')) return;
+
+                localStorage.removeItem('inventory_data');
+                route('.x-inventory-panel');
+            });
+
+            $body.on('click', '.x-add-item', function(e) {
+                var $tar   = $(e.target);
+                var $table = $tar.closest('table');
+
+                var id     = $tar.closest('.x-item-container').attr('data-id');
+                var name   = $table.find('.x-item-name').val();
+                var qty    = $table.find('.x-item-qty').val();
+                var value  = $table.find('.x-item-value').val();
+
+                var containers = JSON.parse(localStorage.getItem('inventory_data'));
+                for(var i = 0; i < containers.length; i++) {
+                    var c = containers[i];
+                    if(c.id === id) {
+                        c.items.push({
+                            id    : String.uuid(),
+                            name  : name,
+                            qty   : qty,
+                            value : value
+                        });
+                        break;
+                    }
+                }
+
+                localStorage.setItem('inventory_data', JSON.stringify(containers));
+                route('.x-inventory-panel');
+            });
+
+            $body.on('click', '.x-remove-item', function(e) {
+                if(!confirm('Are you sure you want to destroy this item?')) return;
+
+                var $tar = $(e.target);
+                var cid  = $tar.closest('.x-item-container').attr('data-id');
+                var iid  = $tar.closest('.x-item-row').attr('data-id');
+
+                var containers = JSON.parse(localStorage.getItem('inventory_data'));
+                for(var i = 0; i < containers.length; i++) {
+                    var c = containers[i];
+                    if(c.id === cid) {
+                        for(var k = 0; k < c.items.length; k++) {
+                            var item = c.items[k];
+                            if(item.id === iid) {
+                                c.items.splice(k,1);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                localStorage.setItem('inventory_data', JSON.stringify(containers));
+                route('.x-inventory-panel');
+            });
+
+            $body.on('click', '.x-change-item-qty', function(e) {
+                var amount = prompt('Adjust quantity by how much?');
+                if(typeof amount !== 'number' && !~amount.toString().search('.')) return;
+
+                var $tar = $(e.target);
+                var cid  = $tar.closest('.x-item-container').attr('data-id');
+                var iid  = $tar.closest('.x-item-row').attr('data-id');
+
+                var containers = JSON.parse(localStorage.getItem('inventory_data'));
+                for(var i = 0; i < containers.length; i++) {
+                    var c = containers[i];
+                    if(c.id === cid) {
+                        for(var k = 0; k < c.items.length; k++) {
+                            var item = c.items[k];
+                            if(item.id === iid) {
+                                item.qty = Number(item.qty) + Number(amount);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                localStorage.setItem('inventory_data', JSON.stringify(containers));
+                route('.x-inventory-panel');
             });
         });
     </script>

@@ -63,3 +63,26 @@
 
     text-align: center;
 }
+
+.table-inventory input,
+.table-inventory button {
+    box-shadow: none;
+    display: block;
+    width: 100%;
+}
+
+.input-row td {
+    padding: 0 !important;
+}
+
+.item-value span:last-child {
+    display: none;
+}
+
+.item-value:hover span:last-child {
+    display: block;
+}
+
+.item-value:hover span:first-child {
+    display: none;
+}
