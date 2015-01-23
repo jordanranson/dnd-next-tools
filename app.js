@@ -479,6 +479,14 @@ $(function() {
         $xSpellSearch.trigger('keyup');
     });
 
+    $body.on('click', '.x-clear-search', function() {
+        searchDelay = 0;
+
+        var $xSpellSearch = $('.x-spell-search');
+        $xSpellSearch.val('');
+        $xSpellSearch.trigger('keyup');
+    });
+
     /*
      * Spell book
      */
