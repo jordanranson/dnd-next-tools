@@ -50,6 +50,7 @@ function formatGold(amount) {
     return string;
 }
 
+var firstSpellListRender = true;
 function renderSpellList(data) {
     var source        = $("#spellTemplate").html();
     var template      = Handlebars.compile(source);
@@ -57,6 +58,15 @@ function renderSpellList(data) {
     var $xSpells      = $('.x-spells');
 
     $xSpells.html(html);
+    if(firstSpellListRender) {
+        setTimeout(function() { $('.x-toggle-group').show();$('.x-toggle-group').hide(); }, 1);
+        firstSpellListRender = false;
+    }
+
+    setTimeout(function() {
+        var $xSpellSearch = $('.x-spell-search');
+        $xSpellSearch.val(localStorage.getItem('search_query'));
+    }, 1);
 }
 
 function findMatch(str, query) {
@@ -174,86 +184,102 @@ $(function() {
 
     var timer;
     var $xSpellSearch = $('.x-spell-search');
+    var searchDelay = 350;
     $xSpellSearch.on('keyup', function(e) {
         clearTimeout(timer);
         timer = setTimeout(function() {
             var rawQuery = $(e.target).val();
+            localStorage.setItem('search_query', rawQuery);
+
             while(!!~rawQuery.search(', ')) {
                 rawQuery = rawQuery.replace(', ', ',')
             }
 
             var queryArr = rawQuery.split(',');
 
-            var filteredData = _.filter(JSON.parse(JSON.stringify(_spells)), function(spell) {
-                var matched = [];
+            var filteredData;
+            if($xSpellSearch.prop('disabled')) {
+                filteredData = JSON.parse(JSON.stringify(_spells));
 
-                for(var i = 0; i < queryArr.length; i++) {
-                    var queryParams = queryArr[i].toLowerCase().split('|');
+                /*
+                 * TODO: Trevon filter checkboxes
+                 * TODO: Trevon filter checkboxes
+                 * TODO: Trevon filter checkboxes
+                 */
+
+            }
+            else {
+                filteredData = _.filter(JSON.parse(JSON.stringify(_spells)), function (spell) {
+                    var matched = [];
+
+                    for (var i = 0; i < queryArr.length; i++) {
+                        var queryParams = queryArr[i].toLowerCase().split('|');
 
 
-                    for(var w = 0; w < queryParams.length; w++) {
-                        var query = queryParams[w];
-                        var next = false;
+                        for (var w = 0; w < queryParams.length; w++) {
+                            var query = queryParams[w];
+                            var next = false;
 
-                        if (!next && query.length < 3) {
-                            next = true;
-                        }
+                            if (!next && query.length < 3) {
+                                next = true;
+                            }
 
-                        if (!next && query === '') {
-                            matched.push(true);
-                            next = true;
-                        }
-
-                        if (!next) {
-                            if (query === 'cantrip' && spell.level == 0) {
+                            if (!next && query === '') {
                                 matched.push(true);
                                 next = true;
                             }
-                        }
 
-                        if (!next) {
-                            if (query === 'ritual' && spell.ritual) {
-                                matched.push(true);
-                                next = true;
-                            }
-                        }
-
-                        if (!next) {
-                            for (var x = 0; x < 10; x++) {
-                                if (query === 'level ' + x && spell.level == x) {
+                            if (!next) {
+                                if (query === 'cantrip' && spell.level == 0) {
                                     matched.push(true);
                                     next = true;
-                                    break;
                                 }
                             }
-                        }
 
-                        if (!next) {
-                            for (var spellClass in spell.classes) {
-                                if (query === spellClass) {
+                            if (!next) {
+                                if (query === 'ritual' && spell.ritual) {
                                     matched.push(true);
                                     next = true;
-                                    break;
                                 }
                             }
-                        }
 
-                        if (!next) {
-                            for (var key in spell) {
-                                if (findMatch(spell[key], query)) {
-                                    matched.push(true);
-                                    next = true;
-                                    break;
+                            if (!next) {
+                                for (var x = 0; x < 10; x++) {
+                                    if (query === 'level ' + x && spell.level == x) {
+                                        matched.push(true);
+                                        next = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!next) {
+                                for (var spellClass in spell.classes) {
+                                    if (query === spellClass) {
+                                        matched.push(true);
+                                        next = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!next) {
+                                for (var key in spell) {
+                                    if (findMatch(spell[key], query)) {
+                                        matched.push(true);
+                                        next = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                return rawQuery === '' ? true : matched.length >= queryArr.length;
-            });
+                    return rawQuery === '' ? true : matched.length >= queryArr.length;
+                });
+            }
 
-            if(rawQuery !== '') {
+            if(rawQuery !== '' && !$xSpellSearch.prop('disabled')) {
                 for(var k = 0; k < filteredData.length; k++) {
                     var spell = filteredData[k];
 
@@ -289,7 +315,8 @@ $(function() {
             }
 
             renderSpellList(filteredData);
-        }, 350);
+        }, searchDelay);
+        searchDelay = 350;
     });
 
 
@@ -429,6 +456,20 @@ $(function() {
         route('.x-inventory-panel');
     });
 
+    $body.on('click', '.x-swap-search-methods', function(e) {
+        searchDelay = 0;
+        
+        var $tgroup = $('.x-toggle-group');
+        var $this   = $(e.target);
+
+        var $xSpellSearch = $('.x-spell-search');
+        var toggled = $this.hasClass('button-primary');
+        $this.toggleClass('button-primary');
+        $xSpellSearch.prop('disabled', !toggled);
+        $tgroup[!toggled  ? 'show':'hide']();
+
+        $xSpellSearch.trigger('keyup');
+    });
 
     /*
      * Spell book

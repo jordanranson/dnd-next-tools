@@ -104,3 +104,29 @@
 th a {
     color: #fff;
 }
+
+.panel-body.panel-body-padded.panel-toggle-group {
+    position: absolute;
+    box-sizing: border-box;
+    top: 79px;
+    right: 17px;
+    border:solid 1px #dadee1;
+    background-color: rgba(255,255,255,.95);
+    z-index: 1;
+    padding-bottom: 7px;
+    width: 38%;
+    opacity: 0.35;
+    margin-right: -25%;
+    transition: all 150ms ease-in-out;
+}
+
+
+.panel-body.panel-body-padded.panel-toggle-group:hover {
+    opacity: 1;
+    margin-right: 0;
+}
+
+.panel-toggle-group .input-group {
+    float: left;
+    margin-right: 10px;
+}
