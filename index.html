@@ -176,7 +176,7 @@
 
     <script id="spellTemplate" type="text/x-handlebars">
         {{#each spells}}
-            <div class="spell" data-name="{{name}}" data-level="{{level}}">
+            <div class="spell" data-name="{{raw_name}}" data-level="{{level}}">
                 <h2>{{{name}}} &nbsp;<small><a href="javascript:void(0)" class="x-add-spell-list">Learn</a></small></h2>
                 <h3>Level {{{level}}}, {{{school}}}{{#if ritual}}, ritual{{/if}}</h3>
                 <p><strong>Casting Time</strong> {{{casting_time}}}</p>

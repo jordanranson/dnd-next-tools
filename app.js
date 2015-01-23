@@ -74,6 +74,11 @@ function findMatch(str, query) {
 }
 
 function loadSpellList(data, query) {
+    for(var k = 0; k < _spells.length; k++) {
+        var spell = _spells[k];
+        spell.raw_name = spell.name;
+    }
+
     renderSpellList(data);
 
     var $xSpellSearch = $('.x-spell-search');
@@ -282,6 +287,7 @@ $(function() {
             if(rawQuery !== '' && !$xSpellSearch.prop('disabled')) {
                 for(var k = 0; k < filteredData.length; k++) {
                     var spell = filteredData[k];
+                        spell.raw_name = spell.name;
 
                     for(var i = 0; i < queryArr.length; i++) {
                         var queryParams = queryArr[i].split('|');
@@ -291,18 +297,20 @@ $(function() {
 
                             if (query.trim() !== '') {
                                 for (var j in spell) {
-                                    var string = spell[j].toString();
-                                    if (!!~string.search(query))
-                                        spell[j] = string.replace(query, '<span class="term">' + query + '</span>');
+                                    if(j !== 'raw_name') {
+                                        var string = spell[j].toString();
+                                        if (!!~string.search(query))
+                                            spell[j] = string.replace(query, '<span class="term">' + query + '</span>');
 
-                                    if (!!~string.search(query.charAt(0).toUpperCase() + query.slice(1)))
-                                        spell[j] = string.replace(query.charAt(0).toUpperCase() + query.slice(1), '<span class="term">' + query.charAt(0).toUpperCase() + query.slice(1) + '</span>');
+                                        if (!!~string.search(query.charAt(0).toUpperCase() + query.slice(1)))
+                                            spell[j] = string.replace(query.charAt(0).toUpperCase() + query.slice(1), '<span class="term">' + query.charAt(0).toUpperCase() + query.slice(1) + '</span>');
 
-                                    if (!!~string.search(query.toLowerCase()))
-                                        spell[j] = string.replace(query.toLowerCase(), '<span class="term">' + query.toLowerCase() + '</span>');
+                                        if (!!~string.search(query.toLowerCase()))
+                                            spell[j] = string.replace(query.toLowerCase(), '<span class="term">' + query.toLowerCase() + '</span>');
 
-                                    if (!!~string.search(query.toUpperCase()))
-                                        spell[j] = string.replace(query.toUpperCase(), '<span class="term">' + query.toUpperCase() + '</span>');
+                                        if (!!~string.search(query.toUpperCase()))
+                                            spell[j] = string.replace(query.toUpperCase(), '<span class="term">' + query.toUpperCase() + '</span>');
+                                    }
                                 }
                             }
 
@@ -521,7 +529,6 @@ $(function() {
 
         var spellbook = JSON.parse(localStorage.getItem('spellbook_data'));
         for(var i = 0; i < spellbook.length; i++) {
-            console.log(spellbook[i]);
             if(spellbook[i].id == id) {
                 spellbook.splice(i, 1);
                 break;
@@ -580,7 +587,7 @@ $(function() {
 
     $body.on('click', '.x-import', function() {
         var data = JSON.parse(prompt('Import data'));
-        
+
         localStorage.setItem('inventory_data', data.inventory_data);
         localStorage.setItem('spellbook_data', data.spellbook_data);
 
